@@ -5,14 +5,42 @@
   </head>
   <body>
     <h1>Example HTML Document</h1>
+    <p>This is an example HTML document created using the htmlDoc library. The htmlExampl.py file plus the example html file show how to use the library to create an html document with various features.</p>
     <section>
       <h2 id="basicHtml">Basic HTML</h2>
-      <p></p>
-      <p>Text can be added using the addText method, which will be wrapped in a paragraph (&lt;p&gt;) tag. You can also include html tags in the text, such as &lt;b&gt;&amp;lt;b&amp;gt;bold&amp;lt;/b&amp;gt;&lt;/b&gt; or &lt;i&gt;&amp;lt;i&amp;gt;italics&amp;lt;/i&amp;gt;&lt;/i&gt;.</p>
-      <p>You can also add hyperlinks using the hyperlink function: <a href="https:\www.google.com" target="_blank">Google</a></p>
+      <p>This section shows basic html functionality.</p>
       <section>
-        <h3 id="HTML Lists">Lists</h3>
-        <p></p>
+        <h3 id="paragraphText">Paragraph Text</h3>
+        <p>Text can be added using the addText method, which will be wrapped in a paragraph (&lt;p&gt;) tag. You can also include html tags in the text, such as <b>&lt;b&gt;bold&lt;/b&gt;</b> or <i>&lt;i&gt;italics&lt;/i&gt;</i>.</p>
+        <p>By default, special characters in the text will be escaped, except for html tags allowed inside a paragraph. If you want to limit allowed html tags, you can use the "keepTags" parameter to specify which tags to allow. If you want to prevent this "smart" behaviour, you can use the allAsText or allAsIs paramters. The allAsText method will escape all special characters (including html tags), while the allAsIs method will not escape any special characters.</p>
+        <p>For example, this text is added using allAsText=True: &lt;b&gt;Bold Text&lt;/b&gt;</p>
+        <p>For example, this text is added using allAsIs=True: <b>Bold Text</b></p>
+      </section>
+      <section>
+        <h3 id="paragraphText">Hyperlinks</h3>
+        <p>You can add hyperlinks using the hyperlink function: <a href="https:\www.google.com" target="_blank">Google</a></p>
+      </section>
+      <section>
+        <h3 id="paragraphText">Lists</h3>
+        <p>You can add ordered and unordered lists using the addOrderedList and addUnorderedList methods. These methods take a list of items to include in the list. Each item can be a string or a block of html code. You can also include nested lists by including a list as an item in the main list.</p>
+        <p>The following is an example of an ordered list:</p>
+        <ol>
+          <li>First item</li>
+          <li>Second item<ol><li>2a</li><li>2b</li></ol></li>
+          <li>Third item</li>
+        </ol>
+        <p>The following is an example of an unordered list:</p>
+        <ul>
+          <li>First item</li>
+          <li>Second item</li>
+          <li>Third item<ul><li>Subitem 1</li><li>Subitem 2</li></ul></li>
+        </ul>
+        <p>The following is an example of an ordered list with a nested unordered list. Note that the unordered list is included as part of the second item in the ordered list (rather than as its own item):</p>
+        <ol>
+          <li>First item</li>
+          <li>Second item<ul><li>Subitem, unorderd</li></ul></li>
+          <li>Third item</li>
+        </ol>
       </section>
     </section>
   </body>

@@ -5,6 +5,11 @@ from html.parser import HTMLParser
 selfClosingTags = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link",
                    "meta", "param", "source", "track", "wbr"]
 
+# TODO add option to add to document head, for example to add css or js
+# TODO add option to generate table of contents/menu based on sections added to the document
+# TODO add image tag
+# TODO add image gallery functionality, for example to add a folder of images as a gallery
+# TODO add tables
 class HtmlDoc:
     """Main class to allow document generation.
        This uses a class so that information can be
@@ -64,6 +69,21 @@ class HtmlDoc:
         self.bodyItems.append(sec)
 
         return sec
+
+    def addText(self, text, atr=[], allAsText=False, allAsIs=False):
+        """ Adds text to the document, this will be inside a html paragraph tag
+    
+        Parameters:
+            - text: paragraph text
+            - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
+                to the heading. For example ["style", "text-align:center"] would add a style attribute
+            - allAsText (optional): if True, all special characters in textStr will be escaped, 
+                including html tags. Default is False
+            - allAsIs (optional): if True, no special characters in textStr will be escaped
+                Default is False
+        """
+        code = paragraph(text, atr, self.indentText, allAsText=allAsText, allAsIs=allAsIs)
+        self.bodyItems.append(code)
 
     def generateHtml(self):
         """ Converts the document into html code
@@ -152,19 +172,26 @@ class Section:
         # list of html code added to the section. This also includes location of subsections
         self.htmlCode = []
 
-    # TODO add docs for allAsText and allAsIs parameters
-    def addText(self, text, atr=[], allAsText=False, allAsIs=False):
-        """ Adds text to the section, this will be inside a html paragraph tag
-    
+    def addOrderedList(self, items, atr=[], indentText=False, allAsText=False, allAsIs=False):
+        """ adds an ordered list to the section
+
         Parameters:
-            - text: paragraph text
+            - items: list of items to include in the list. Each item can be a string or a block of html code
             - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
-                to the heading. For example ["style", "text-align:center"] would add a style attribute
+                to the list. For example ["style", "text-align:center"] would add a style attribute
+            - indentText (optional): yattag indent option, for text inside tags. Default is False
+            - allAsText (optional): if True, all special characters in items will be escaped, 
+                including html tags. Default is False
+            - allAsIs (optional): if True, no special characters in items will be escaped
+                Default is False
+
+        Returns:
+            - html code for the ordered list
         """
 
-        code = paragraph(text, atr, self.indentText, allAsText=allAsText, allAsIs=allAsIs)
+        code = orderedList(items, atr=atr, indentText=indentText, allAsText=allAsText, allAsIs=allAsIs)
         self.htmlCode.append(code)
-        
+
     def addSubsection(self, title, id=None, atr=[]):
         """adds a subsection one level lower than this section
 
@@ -180,7 +207,43 @@ class Section:
         self.htmlCode.append(sub)
     
         return sub
+    
+    def addText(self, text, atr=[], allAsText=False, allAsIs=False):
+        """ Adds text to the section, this will be inside a html paragraph tag
+    
+        Parameters:
+            - text: paragraph text
+            - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
+                to the heading. For example ["style", "text-align:center"] would add a style attribute
+            - allAsText (optional): if True, all special characters in textStr will be escaped, 
+                including html tags. Default is False
+            - allAsIs (optional): if True, no special characters in textStr will be escaped
+                Default is False
+        """
+
+        code = paragraph(text, atr, self.indentText, allAsText=allAsText, allAsIs=allAsIs)
+        self.htmlCode.append(code)
         
+    def addUnorderedList(self, items, atr=[], indentText=False, allAsText=False, allAsIs=False):
+        """ adds an unordered list to the section
+
+        Parameters:
+            - items: list of items to include in the list. Each item can be a string or a block of html code
+            - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
+                to the list. For example ["style", "text-align:center"] would add a style attribute
+            - indentText (optional): yattag indent option, for text inside tags. Default is False
+            - allAsText (optional): if True, all special characters in items will be escaped, 
+                including html tags. Default is False
+            - allAsIs (optional): if True, no special characters in items will be escaped
+                Default is False
+
+        Returns:
+            - html code for the ordered list
+        """
+
+        code = unorderedList(items, atr=atr, indentText=indentText, allAsText=allAsText, allAsIs=allAsIs)
+        self.htmlCode.append(code)
+    
     def generateHtml(self):
         """ Converts the section into a block of html text
 
@@ -271,7 +334,64 @@ def hyperlink(link, textStr=None, newTab=True, atr=[], indentText=False):
 
     return result
 
-# TODO add docs for allAsText and allAsIs parameters and keepTags parameter        
+def orderedList(items, atr=[], indentText=False, allAsText=False, allAsIs=False):
+    """ generates an html ordered list
+
+    Parameters:
+        - items: list of items to include in the list. Each item can be a string or a block of html code
+        - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
+            to the list. For example ["style", "text-align:center"] would add a style attribute
+        - indentText (optional): yattag indent option, for text inside tags. Default is False
+        - allAsText (optional): if True, all special characters in items will be escaped, 
+            including html tags. Default is False
+        - allAsIs (optional): if True, no special characters in items will be escaped
+            Default is False
+
+    Returns:
+        - html code for the ordered list
+    """
+
+    if allAsText and allAsIs:
+        raise ValueError("allAsText and allAsIs cannot both be True")
+        
+    doc, tag, text = yattag.Doc().tagtext()
+
+    with tag('ol', *atr):
+        iii = 0
+        while iii < len(items):
+            with tag('li'):
+                if isinstance(items[iii], str):
+                    # this is a list item, check if we need to split into text vs tags
+                    if allAsText:
+                        subTexts = [items[iii]]
+                        subTypes = ['text']
+                    elif allAsIs:
+                        subTexts = [items[iii]]
+                        subTypes = ['tag']
+                    else:
+                        subTexts, subTypes = spitTags(items[iii])
+
+                    for jjj in range(0, len(subTexts)):
+                        if subTypes[jjj] == 'text':
+                            text(subTexts[jjj])
+                        else:
+                            doc.asis(subTexts[jjj])
+
+                    if iii + 1 < len(items) and isinstance(items[iii + 1], list):
+                        # this is a nested list, call orderedList recursively
+                        doc.asis(orderedList(items[iii + 1], indentText=indentText, allAsText=allAsText, allAsIs=allAsIs))
+                        iii += 1
+                    iii += 1
+                else:
+                    raise TypeError("List items must be strings or lists")
+            
+    result = yattag.indent(
+        doc.getvalue(),
+        indent_text = indentText
+        )
+
+    return result
+      
 def paragraph(textStr, atr=[], indentText=False, allAsText=False, allAsIs=False,
               keepTags=['a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br',
                         'button', 'canvas', 'cite', 'code', 'data', 'datalist', 
@@ -289,7 +409,14 @@ def paragraph(textStr, atr=[], indentText=False, allAsText=False, allAsIs=False,
         - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
             to the heading. For example ["style", "text-align:center"] would add a style attribute
         - indentText (optional): yattag indent option, for text inside tags. Default is False
-
+        - allAsText (optional): if True, all special characters in textStr will be escaped, 
+            including html tags. Default is False
+        - allAsIs (optional): if True, no special characters in textStr will be escaped
+            Default is False
+        - keepTags (optional): list of html tags to allow in textStr. This is only used if 
+            allAsText and allAsIs are both False. By default, this includes all html tags
+            which are allowed inside a paragraph tag according to the HTML specification.
+            
     Returns:
         html code for the paragraph
     """
@@ -321,9 +448,20 @@ def paragraph(textStr, atr=[], indentText=False, allAsText=False, allAsIs=False,
 
     return result
 
-# TODO: add docs
-def spitTags(text, tags):
+def spitTags(text, tags=None):
+    """ Helper function to split text into parts that are tags and parts that are not tags.
+        this is required to allow some tags to be kept in the text while others are treated 
+        as text and escaped. Yattag requires different function calls to add text vs raw html.
 
+    Parameters:
+        - text: the text to be split
+        - tags (optional): list of tags to be split out. If None, all tags identified.
+    
+    Returns:
+        - subTexts: list of text parts, including tags and non-tags
+        - subTypes: list of same length as subTexts, with values 'tag' or
+            'text' to indicate whether the corresponding item in subTexts is a tag or not
+    """
     # create parser to find tags and their locations in the text
     class MyHTMLParser(HTMLParser):
         def __init__(self):
@@ -364,7 +502,12 @@ def spitTags(text, tags):
     subEndInds = []
     iii = 0
     while iii < len(foundItem):
-        if foundType[iii] == 'start' and foundItem[iii] in tags:
+        if foundType[iii] == 'start':
+            if not tags is None and not foundItem[iii] in tags:
+                # tags provided and this tag is not in the list, treat as text
+                iii += 1
+                continue
+
             if len(subEndInds) == 0 and startInds[iii] > 0:
                 # if this is the first tag found and there is text before it, add that text to subTexts and subTypes
                 subTexts.append(text[0 : startInds[iii]])
@@ -405,15 +548,76 @@ def spitTags(text, tags):
                 subStartInds.append(startInd)
                 subEndInds.append(endInd - 1)
         iii += 1
-    # check for text after the last tag
-    if len(subEndInds) > 0 and subEndInds[-1] < len(text) - 1:
+    if len(subStartInds) == 0:
+        # if no tags found, return original text as one item in subTexts and subTypes
+        subTexts.append(text)
+        subTypes.append('text')
+    elif len(subEndInds) > 0 and subEndInds[-1] < len(text) - 1:
+        # check for text after the last tag
         subTexts.append(text[subEndInds[-1] + 1 :])
         subTypes.append('text')
         subStartInds.append(subEndInds[-1] + 1)
         subEndInds.append(len(text) - 1)
 
     return subTexts, subTypes
-    
+
+def unorderedList(items, atr=[], indentText=False, allAsText=False, allAsIs=False):
+    """ generates an html unorderedList list
+
+    Parameters:
+        - items: list of items to include in the list. Each item can be a string or a block of html code
+        - atr (optional): list of tuples. Each item is a name-value pair which is added as an atribute
+            to the list. For example ["style", "text-align:center"] would add a style attribute
+        - indentText (optional): yattag indent option, for text inside tags. Default is False
+        - allAsText (optional): if True, all special characters in items will be escaped, 
+            including html tags. Default is False
+        - allAsIs (optional): if True, no special characters in items will be escaped
+            Default is False
+
+    Returns:
+        - html code for the ordered list
+    """
+
+    if allAsText and allAsIs:
+        raise ValueError("allAsText and allAsIs cannot both be True")
+        
+    doc, tag, text = yattag.Doc().tagtext()
+
+    with tag('ul', *atr):
+        iii = 0
+        while iii < len(items):
+            with tag('li'):
+                if isinstance(items[iii], str):
+                    # this is a list item, check if we need to split into text vs tags
+                    if allAsText:
+                        subTexts = [items[iii]]
+                        subTypes = ['text']
+                    elif allAsIs:
+                        subTexts = [items[iii]]
+                        subTypes = ['tag']
+                    else:
+                        subTexts, subTypes = spitTags(items[iii])
+
+                    for jjj in range(0, len(subTexts)):
+                        if subTypes[jjj] == 'text':
+                            text(subTexts[jjj])
+                        else:
+                            doc.asis(subTexts[jjj])
+
+                    if iii + 1 < len(items) and isinstance(items[iii + 1], list):
+                        # this is a nested list, call orderedList recursively
+                        doc.asis(unorderedList(items[iii + 1], indentText=indentText, allAsText=allAsText, allAsIs=allAsIs))
+                        iii += 1
+                    iii += 1
+                else:
+                    raise TypeError("List items must be strings or lists")
+            
+    result = yattag.indent(
+        doc.getvalue(),
+        indent_text = indentText
+        )
+
+    return result 
 
 # FOR TESTING
 if __name__ == "__main__":
